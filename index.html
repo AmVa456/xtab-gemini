@@ -1,27 +1,69 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Code Reviewer</title>
+    <title>Gemini Design Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+             typography: (theme) => ({
+              DEFAULT: {
+                css: {
+                  '--tw-prose-body': theme('colors.slate[300]'),
+                  '--tw-prose-headings': theme('colors.slate[100]'),
+                  '--tw-prose-lead': theme('colors.slate[400]'),
+                  '--tw-prose-links': theme('colors.sky[400]'),
+                  '--tw-prose-bold': theme('colors.slate[100]'),
+                  '--tw-prose-counters': theme('colors.slate[400]'),
+                  '--tw-prose-bullets': theme('colors.slate[600]'),
+                  '--tw-prose-hr': theme('colors.slate[700]'),
+                  '--tw-prose-quotes': theme('colors.slate[200]'),
+                  '--tw-prose-quote-borders': theme('colors.slate[700]'),
+                  '--tw-prose-captions': theme('colors.slate[400]'),
+                  '--tw-prose-code': theme('colors.sky[300]'),
+                  '--tw-prose-pre-code': theme('colors.slate[300]'),
+                  '--tw-prose-pre-bg': theme('colors.slate[900]'),
+                  '--tw-prose-th-borders': theme('colors.slate[600]'),
+                  '--tw-prose-td-borders': theme('colors.slate[700]'),
+                  '--tw-prose-invert-body': theme('colors.slate[300]'),
+                  '--tw-prose-invert-headings': theme('colors.white'),
+                  '--tw-prose-invert-lead': theme('colors.slate[400]'),
+                  '--tw-prose-invert-links': theme('colors.sky[400]'),
+                  '--tw-prose-invert-bold': theme('colors.white'),
+                  '--tw-prose-invert-counters': theme('colors.slate[400]'),
+                  '--tw-prose-invert-bullets': theme('colors.slate[600]'),
+                  '--tw-prose-invert-hr': theme('colors.slate[700]'),
+                  '--tw-prose-invert-quotes': theme('colors.slate[100]'),
+                  '--tw-prose-invert-quote-borders': theme('colors.slate[700]'),
+                  '--tw-prose-invert-captions': theme('colors.slate[400]'),
+                  '--tw-prose-invert-code': theme('colors.sky[300]'),
+                  '--tw-prose-invert-pre-code': theme('colors.slate[300]'),
+                  '--tw-prose-invert-pre-bg': 'rgb(0 0 0 / 50%)',
+                  '--tw-prose-invert-th-borders': theme('colors.slate[600]'),
+                  '--tw-prose-invert-td-borders': theme('colors.slate[700]'),
+                },
+              },
+            }),
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
               mono: ['Fira Code', 'monospace'],
             },
           },
         },
+        plugins: [
+            require('@tailwindcss/typography'),
+        ],
       }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+
   <script type="importmap">
 {
   "imports": {
@@ -32,6 +74,23 @@
   }
 }
 </script>
+<style>
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(125, 144, 184, 0.3);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+     background-color: rgba(125, 144, 184, 0.5);
+  }
+</style>
 </head>
   <body class="bg-slate-900">
     <div id="root"></div>

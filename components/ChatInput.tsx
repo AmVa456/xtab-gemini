@@ -4,15 +4,23 @@ import React, { useState } from 'react';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  mode: 'generate' | 'chat' | 'inspiration';
 }
 
 const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
 );
 
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, mode }) => {
   const [message, setMessage] = useState('');
+  
+  const placeholderText = {
+    generate: 'e.g., A futuristic city skyline at sunset, synthwave style...',
+    chat: 'Ask for design ideas or feedback...',
+    inspiration: 'Search for inspiration, e.g., "logo ideas for a coffee shop"'
+  }[mode];
+
 
   const handleSend = () => {
     if (message.trim()) {
@@ -29,13 +37,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   }
 
   return (
-    <div className="mt-6 mb-4 sticky bottom-4">
+    <div className="mt-auto pt-6 pb-4 sticky bottom-0 bg-slate-900">
       <div className="relative bg-slate-800/70 backdrop-blur-md rounded-lg border border-slate-700 shadow-xl">
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask a follow-up question..."
+          placeholder={placeholderText}
           rows={1}
           className="w-full bg-transparent text-slate-200 p-4 pr-16 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
           disabled={isLoading}

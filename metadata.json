@@ -1,5 +1,7 @@
 {
-  "name": "My Code Buddy",
-  "description": "An automated code review tool that uses the Gemini API to analyze code and provide detailed feedback on quality, bugs, performance, and best practices.",
-  "requestFramePermissions": []
+  "name": "xTab Palm",
+  "description": "An AI-powered assistant for graphic design. Generate images, get inspiration, and chat about design concepts using the Gemini API.",
+  "requestFramePermissions": [
+    "camera"
+  ]
 }
