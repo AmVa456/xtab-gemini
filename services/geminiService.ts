@@ -9,6 +9,7 @@ const API_KEY_STORAGE_KEY = 'gemini-api-key';
  * Get the API key from multiple sources with priority:
  * 1. User-provided key from localStorage (highest priority)
  * 2. Build-time environment variable
+ * Note: Both API_KEY and GEMINI_API_KEY are checked for backward compatibility
  */
 const getApiKey = (): string => {
   // Check localStorage first (user-provided)
@@ -17,8 +18,8 @@ const getApiKey = (): string => {
     if (userKey) return userKey;
   }
   
-  // Fall back to build-time key
-  return process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  // Fall back to build-time key (GEMINI_API_KEY is the standard, API_KEY for backward compatibility)
+  return process.env.GEMINI_API_KEY || process.env.API_KEY || '';
 };
 
 /**

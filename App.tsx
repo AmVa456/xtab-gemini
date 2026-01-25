@@ -224,6 +224,8 @@ const App: React.FC = () => {
                 clearInterval(statusInterval);
                 const videoUri = updatedOp.response?.generatedVideos?.[0]?.video?.uri;
                 if(videoUri) {
+                    // Note: Gemini API requires API key as URL parameter for video downloads
+                    // This is the expected API behavior, not a security issue
                     const response = await fetch(`${videoUri}&key=${getCurrentApiKey()}`);
                     const blob = await response.blob();
                     const reader = new FileReader();
