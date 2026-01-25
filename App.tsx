@@ -8,7 +8,11 @@ import ChatInput from './components/ChatInput';
 import Gallery from './components/Gallery';
 import ImageEditor from './components/ImageEditor';
 import VideoGenerator from './components/VideoGenerator';
+import SaveToPostDialog from './components/SaveToPostDialog';
 import { createDesignChat, generateImages, getInspiration, editImage, generateVideo, checkVideoStatus } from './services/geminiService';
+import { useDashboardConnection } from './hooks/useDashboardConnection';
+import { getDashboardApiClient } from './services/dashboardApiClient';
+import type { Platform, PostStatus } from './lib/types';
 
 type Mode = 'generate' | 'chat' | 'inspiration' | 'gallery' | 'edit' | 'video';
 
@@ -54,6 +58,13 @@ const App: React.FC = () => {
   const [loadingStatus, setLoadingStatus] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   
+  // Dashboard integration state
+  const dashboardConnection = useDashboardConnection();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [imagesToSave, setImagesToSave] = useState<string[]>([]);
+  const [isSavingPost, setIsSavingPost] = useState(false);
+  const [saveNotification, setSaveNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  
   const chatSessionRef = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingTimeoutRef = useRef<number | undefined>();
@@ -91,6 +102,52 @@ const App: React.FC = () => {
         return newGallery;
     });
   }, []);
+
+  const handleSaveItemToDashboard = useCallback((itemUrl: string) => {
+    setImagesToSave([itemUrl]);
+    setSaveDialogOpen(true);
+  }, []);
+
+  const handleSavePost = useCallback(async (postData: {
+    title: string;
+    content: string;
+    platforms: Platform[];
+    status: PostStatus;
+    scheduledAt?: Date;
+    tags: string[];
+  }) => {
+    setIsSavingPost(true);
+    setSaveNotification(null);
+
+    try {
+      const client = getDashboardApiClient();
+      const response = await client.savePost({
+        ...postData,
+        images: imagesToSave,
+      });
+
+      setSaveNotification({
+        type: 'success',
+        message: response.postUrl 
+          ? `Post saved successfully! View it at: ${response.postUrl}`
+          : 'Post saved successfully to dashboard!',
+      });
+      
+      setSaveDialogOpen(false);
+      setImagesToSave([]);
+      
+      // Auto-hide notification after 5 seconds
+      setTimeout(() => setSaveNotification(null), 5000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save post to dashboard';
+      setSaveNotification({
+        type: 'error',
+        message: errorMessage,
+      });
+    } finally {
+      setIsSavingPost(false);
+    }
+  }, [imagesToSave]);
 
   const addMessage = (message: Message) => {
     setMessages(prev => [...prev, message]);
@@ -255,7 +312,14 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (mode === 'gallery') {
-        return <Gallery items={galleryItems} onRemove={handleRemoveItem} />;
+        return (
+          <Gallery 
+            items={galleryItems} 
+            onRemove={handleRemoveItem} 
+            onSaveToDashboard={handleSaveItemToDashboard}
+            isDashboardEnabled={dashboardConnection.isEnabled && dashboardConnection.status === 'connected'}
+          />
+        );
     }
     if (mode === 'edit') {
         return <ImageEditor onGenerate={handleEditImage} isLoading={isLoading} loadingStatus={loadingStatus} />;
@@ -289,11 +353,54 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col">
-      <Header />
+      <Header 
+        connectionStatus={dashboardConnection.status}
+        dashboardApiUrl={dashboardConnection.apiUrl}
+        isDashboardEnabled={dashboardConnection.isEnabled}
+        onCheckConnection={dashboardConnection.checkConnection}
+      />
       <main className="container mx-auto px-4 flex-grow flex flex-col overflow-hidden">
         <ModeSelector mode={mode} setMode={handleModeChange} isLoading={isLoading}/>
         {renderContent()}
       </main>
+
+      {/* Save to Dashboard Dialog */}
+      <SaveToPostDialog
+        isOpen={saveDialogOpen}
+        images={imagesToSave}
+        onClose={() => {
+          setSaveDialogOpen(false);
+          setImagesToSave([]);
+        }}
+        onSave={handleSavePost}
+        isSaving={isSavingPost}
+      />
+
+      {/* Save Notification */}
+      {saveNotification && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md">
+          <div className={`p-4 rounded-lg shadow-lg border ${
+            saveNotification.type === 'success'
+              ? 'bg-green-900/90 border-green-700 text-green-100'
+              : 'bg-red-900/90 border-red-700 text-red-100'
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium">
+                  {saveNotification.type === 'success' ? 'Success!' : 'Error'}
+                </p>
+                <p className="text-sm mt-1">{saveNotification.message}</p>
+              </div>
+              <button
+                onClick={() => setSaveNotification(null)}
+                className="text-current opacity-70 hover:opacity-100"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

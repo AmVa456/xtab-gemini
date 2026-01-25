@@ -1,4 +1,7 @@
 import React from 'react';
+import DashboardConnection from './DashboardConnection';
+import { getAppMode } from '../lib/config';
+import type { ConnectionStatus } from '../lib/types';
 
 const PaletteIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg 
@@ -21,16 +24,50 @@ const PaletteIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
+export interface HeaderProps {
+  connectionStatus?: ConnectionStatus;
+  dashboardApiUrl?: string;
+  isDashboardEnabled?: boolean;
+  onCheckConnection?: () => void;
+  onOpenSettings?: () => void;
+}
 
-const Header: React.FC = () => {
+const Header: React.FC<HeaderProps> = ({
+  connectionStatus,
+  dashboardApiUrl = '',
+  isDashboardEnabled = false,
+  onCheckConnection,
+  onOpenSettings,
+}) => {
+  const appMode = getAppMode();
+  
   return (
     <header className="bg-slate-900/70 backdrop-blur-sm sticky top-0 z-10 border-b border-slate-800">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center space-x-3">
-          <PaletteIcon className="w-8 h-8 text-sky-400" />
-          <h1 className="text-2xl font-bold text-slate-50 tracking-tight">
-            Gemini Design Studio
-          </h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <PaletteIcon className="w-8 h-8 text-sky-400" />
+            <div>
+              <h1 className="text-2xl font-bold text-slate-50 tracking-tight">
+                Gemini Design Studio
+              </h1>
+              {appMode !== 'standalone' && (
+                <p className="text-xs text-slate-400">
+                  {appMode === 'embedded' ? 'Embedded Mode' : 'Integrated Mode'}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {connectionStatus && onCheckConnection && (
+            <DashboardConnection
+              status={connectionStatus}
+              apiUrl={dashboardApiUrl}
+              isEnabled={isDashboardEnabled}
+              onCheckConnection={onCheckConnection}
+              onOpenSettings={onOpenSettings}
+            />
+          )}
         </div>
       </div>
     </header>
