@@ -13,13 +13,24 @@ const ImageIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
 );
 
+const CloudUploadIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></svg>
+);
+
 
 interface GalleryProps {
     items: string[];
     onRemove: (itemUrl: string) => void;
+    onSaveToDashboard?: (itemUrl: string) => void;
+    isDashboardEnabled?: boolean;
 }
 
-const Gallery: React.FC<GalleryProps> = ({ items, onRemove }) => {
+const Gallery: React.FC<GalleryProps> = ({ 
+    items, 
+    onRemove, 
+    onSaveToDashboard,
+    isDashboardEnabled = false 
+}) => {
     if (items.length === 0) {
         return (
              <div className="flex-grow flex flex-col justify-center items-center text-center text-slate-500 p-8 bg-slate-800/50 rounded-lg border border-dashed border-slate-700">
@@ -42,7 +53,17 @@ const Gallery: React.FC<GalleryProps> = ({ items, onRemove }) => {
                         ) : (
                              <img src={itemSrc} alt={`Saved item ${index + 1}`} className="w-full h-full object-cover" />
                         )}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                             {isDashboardEnabled && !isVideo && onSaveToDashboard && (
+                                <button
+                                    onClick={() => onSaveToDashboard(itemSrc)}
+                                    className="p-3 bg-purple-900/80 text-purple-200 rounded-full hover:bg-purple-800"
+                                    aria-label="Save to dashboard"
+                                    title="Save to Dashboard"
+                                >
+                                    <CloudUploadIcon className="w-6 h-6" />
+                                </button>
+                            )}
                              <button
                                 onClick={() => onRemove(itemSrc)}
                                 className="p-3 bg-red-900/80 text-red-200 rounded-full hover:bg-red-800"
