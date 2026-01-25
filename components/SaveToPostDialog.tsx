@@ -271,7 +271,7 @@ const SaveToPostDialog: React.FC<SaveToPostDialogProps> = ({
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={isSaving}
             className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-700 disabled:text-slate-500 text-white text-sm font-medium rounded-md transition-colors"
           >

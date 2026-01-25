@@ -85,7 +85,7 @@ export const useDashboardConnection = (): UseDashboardConnectionReturn => {
       ...prev,
       isEnabled: enabled,
       apiUrl,
-      status: enabled ? 'disconnected' : 'disconnected',
+      status: 'disconnected',
     }));
 
     // Check connection with new settings if enabled

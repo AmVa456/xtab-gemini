@@ -126,8 +126,10 @@ export class DashboardApiClient {
     // Upload images as attachments
     if (postData.images && postData.images.length > 0) {
       const uploadPromises = postData.images.map((imageData, index) => {
-        const mimeType = imageData.match(/data:([^;]+);/)?.[1] || 'image/png';
-        const base64Data = imageData.split(',')[1] || imageData;
+        // Extract mime type and base64 data from data URL
+        const dataUrlMatch = imageData.match(/^data:([^;]+);base64,(.+)$/);
+        const mimeType = dataUrlMatch?.[1] || 'image/png';
+        const base64Data = dataUrlMatch?.[2] || imageData;
         
         return this.uploadAttachment({
           postId: postResponse.postId,

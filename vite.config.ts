@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         ...baseConfig,
         build: {
           lib: {
-            entry: path.resolve(__dirname, 'index.tsx'),
+            entry: path.resolve(__dirname, 'lib.tsx'),
             name: 'XtabGemini',
             formats: ['es', 'umd'],
             fileName: (format) => `xtab-gemini.${format}.js`,
