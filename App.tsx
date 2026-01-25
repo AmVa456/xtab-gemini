@@ -9,7 +9,8 @@ import Gallery from './components/Gallery';
 import ImageEditor from './components/ImageEditor';
 import VideoGenerator from './components/VideoGenerator';
 import SaveToPostDialog from './components/SaveToPostDialog';
-import { createDesignChat, generateImages, getInspiration, editImage, generateVideo, checkVideoStatus } from './services/geminiService';
+import ApiKeySettings from './components/ApiKeySettings';
+import { createDesignChat, generateImages, getInspiration, editImage, generateVideo, checkVideoStatus, getCurrentApiKey, isApiKeyConfigured } from './services/geminiService';
 import { useDashboardConnection } from './hooks/useDashboardConnection';
 import { getDashboardApiClient } from './services/dashboardApiClient';
 import type { Platform, PostStatus } from './lib/types';
@@ -58,6 +59,10 @@ const App: React.FC = () => {
   const [loadingStatus, setLoadingStatus] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   
+  // API Key Settings
+  const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
+  
   // Dashboard integration state
   const dashboardConnection = useDashboardConnection();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -74,6 +79,11 @@ const App: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
+    // Check if API key is configured on initial load
+    if (!isApiKeyConfigured()) {
+      setShowApiKeyWarning(true);
+    }
+    
     try {
         const savedItems = localStorage.getItem('gemini-design-gallery');
         if (savedItems) {
@@ -214,7 +224,9 @@ const App: React.FC = () => {
                 clearInterval(statusInterval);
                 const videoUri = updatedOp.response?.generatedVideos?.[0]?.video?.uri;
                 if(videoUri) {
-                    const response = await fetch(`${videoUri}&key=${process.env.API_KEY}`);
+                    // Note: Gemini API requires API key as URL parameter for video downloads
+                    // This is the expected API behavior, not a security issue
+                    const response = await fetch(`${videoUri}&key=${getCurrentApiKey()}`);
                     const blob = await response.blob();
                     const reader = new FileReader();
                     reader.onload = () => {
@@ -358,11 +370,51 @@ const App: React.FC = () => {
         dashboardApiUrl={dashboardConnection.apiUrl}
         isDashboardEnabled={dashboardConnection.isEnabled}
         onCheckConnection={dashboardConnection.checkConnection}
+        onOpenApiKeySettings={() => setApiKeySettingsOpen(true)}
       />
       <main className="container mx-auto px-4 flex-grow flex flex-col overflow-hidden">
+        {/* API Key Warning */}
+        {showApiKeyWarning && !isApiKeyConfigured() && (
+          <div className="my-4 p-4 bg-amber-900/30 border border-amber-700 text-amber-300 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">API Key Not Configured</h3>
+                <p className="text-sm mb-3">
+                  To use Gemini Design Studio, you need to configure your Google Gemini API key. 
+                  You can get a free API key from Google AI Studio.
+                </p>
+                <button
+                  onClick={() => {
+                    setApiKeySettingsOpen(true);
+                    setShowApiKeyWarning(false);
+                  }}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                >
+                  Configure API Key
+                </button>
+              </div>
+              <button
+                onClick={() => setShowApiKeyWarning(false)}
+                className="text-amber-400 hover:text-amber-200"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+        
         <ModeSelector mode={mode} setMode={handleModeChange} isLoading={isLoading}/>
         {renderContent()}
       </main>
+
+      {/* API Key Settings Dialog */}
+      <ApiKeySettings
+        isOpen={apiKeySettingsOpen}
+        onClose={() => setApiKeySettingsOpen(false)}
+      />
 
       {/* Save to Dashboard Dialog */}
       <SaveToPostDialog

@@ -2,13 +2,75 @@
 // Fix: Add GenerateVideosResponse to imports for use with Operation type.
 import { GoogleGenAI, Chat, Modality, Operation, GenerateContentResponse, GenerateVideosResponse } from "@google/genai";
 
-const API_KEY = process.env.API_KEY;
+// Storage key for user-provided API key
+const API_KEY_STORAGE_KEY = 'gemini-api-key';
 
-if (!API_KEY) {
-  throw new Error("API_KEY is not set. Please set the API_KEY environment variable.");
-}
+/**
+ * Get the API key from multiple sources with priority:
+ * 1. User-provided key from localStorage (highest priority)
+ * 2. Build-time environment variable
+ * Note: Both API_KEY and GEMINI_API_KEY are checked for backward compatibility
+ */
+const getApiKey = (): string => {
+  // Check localStorage first (user-provided)
+  if (typeof window !== 'undefined') {
+    const userKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (userKey) return userKey;
+  }
+  
+  // Fall back to build-time key (GEMINI_API_KEY is the standard, API_KEY for backward compatibility)
+  return process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+};
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+/**
+ * Save API key to localStorage
+ */
+export const saveApiKey = (apiKey: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+  }
+};
+
+/**
+ * Clear API key from localStorage
+ */
+export const clearApiKey = (): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(API_KEY_STORAGE_KEY);
+  }
+};
+
+/**
+ * Check if an API key is configured (either build-time or user-provided)
+ */
+export const isApiKeyConfigured = (): boolean => {
+  return !!getApiKey();
+};
+
+/**
+ * Get the current API key (for specific cases like video download URLs)
+ * Use with caution - don't log or expose this value
+ */
+export const getCurrentApiKey = (): string => {
+  return getApiKey();
+};
+
+/**
+ * Validate that an API key exists and throw a helpful error if not
+ */
+const validateApiKey = (): void => {
+  if (!getApiKey()) {
+    throw new Error("Gemini API key is not configured. Please add it in the settings or as a GitHub repository secret.");
+  }
+};
+
+/**
+ * Get or create the GoogleGenAI instance with current API key
+ */
+const getAiInstance = (): GoogleGenAI => {
+  validateApiKey();
+  return new GoogleGenAI({ apiKey: getApiKey() });
+};
 
 // Fix: Make `uri` and `title` optional to align with the library's `GroundingChunk` type.
 export interface GroundingChunk {
@@ -21,6 +83,7 @@ export interface GroundingChunk {
 
 export const generateImages = async (prompt: string): Promise<string[]> => {
   try {
+    const ai = getAiInstance();
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: prompt,
@@ -40,6 +103,7 @@ export const generateImages = async (prompt: string): Promise<string[]> => {
 
 export const editImage = async (base64ImageData: string, base64MaskData: string, prompt: string): Promise<{ text: string, images: string[] }> => {
   try {
+    const ai = getAiInstance();
     const imagePart = { inlineData: { data: base64ImageData.split(',')[1], mimeType: 'image/png' } };
     const maskPart = { inlineData: { data: base64MaskData.split(',')[1], mimeType: 'image/png' } };
     const textPart = { text: prompt };
@@ -77,6 +141,7 @@ export const editImage = async (base64ImageData: string, base64MaskData: string,
 // Fix: Add GenerateVideosResponse type argument to the Operation generic type.
 export const generateVideo = async (prompt: string): Promise<Operation<GenerateVideosResponse>> => {
     try {
+        const ai = getAiInstance();
         const operation = await ai.models.generateVideos({
             model: 'veo-2.0-generate-001',
             prompt: prompt,
@@ -94,6 +159,7 @@ export const generateVideo = async (prompt: string): Promise<Operation<GenerateV
 // Fix: Add GenerateVideosResponse type argument to the Operation generic type for both the parameter and return value.
 export const checkVideoStatus = async (operation: Operation<GenerateVideosResponse>): Promise<Operation<GenerateVideosResponse>> => {
     try {
+        const ai = getAiInstance();
         const updatedOperation = await ai.operations.getVideosOperation({ operation: operation });
         return updatedOperation;
     } catch (error) {
@@ -104,6 +170,7 @@ export const checkVideoStatus = async (operation: Operation<GenerateVideosRespon
 
 export const getInspiration = async (prompt: string): Promise<{ text: string, sources: GroundingChunk[] }> => {
   try {
+    const ai = getAiInstance();
     const response = await ai.models.generateContent({
        model: "gemini-2.5-flash",
        contents: prompt,
@@ -137,6 +204,7 @@ export const createDesignChat = (): Chat => {
     - When discussing concepts, be descriptive and use evocative language.`;
 
     try {
+        const ai = getAiInstance();
         const chat = ai.chats.create({
           model: 'gemini-2.5-flash',
           config: {
