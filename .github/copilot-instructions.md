@@ -46,7 +46,6 @@ xtab-gemini is a React + TypeScript application that provides an AI-powered desi
 ├── App.tsx               # Main application component
 ├── index.tsx             # Application entry point
 ├── lib.tsx               # Library export (for embedded mode)
-├── constants.ts          # Application constants
 └── vite.config.ts        # Vite configuration
 
 ```
@@ -137,11 +136,13 @@ npm run preview
 
 Key environment variables:
 
-- `GEMINI_API_KEY` or `VITE_GEMINI_API_KEY` - Google Gemini API key (required). Both are supported for backward compatibility; use `GEMINI_API_KEY` as it's processed by Vite config.
+- `GEMINI_API_KEY` - Google Gemini API key (required). Accessed via `loadEnv()` in Vite config and made available as `process.env.GEMINI_API_KEY`. Does not require `VITE_` prefix due to explicit handling in vite.config.ts.
 - `VITE_DASHBOARD_ENABLED` - Enable dashboard integration (true/false)
 - `VITE_DASHBOARD_API_URL` - Dashboard API endpoint
 - `VITE_DASHBOARD_API_KEY` - Dashboard authentication key
 - `VITE_MODE` - App mode: standalone/integrated/embedded
+
+Note: `VITE_GEMINI_API_KEY` is also supported in code for backward compatibility but `GEMINI_API_KEY` is the standard.
 
 ## Architecture Patterns
 
