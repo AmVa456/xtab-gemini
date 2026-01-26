@@ -83,12 +83,6 @@ export interface GroundingChunk {
 
 export const generateImages = async (prompt: string): Promise<string[]> => {
   try {
-    // Validate API key before attempting generation
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      throw new Error("API key is not configured. Please add your Gemini API key in the settings.");
-    }
-    
     console.log('[Image Generation] Starting image generation...');
     console.log('[Image Generation] Prompt:', prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''));
     console.log('[Image Generation] Model: imagen-4.0-generate-001');
