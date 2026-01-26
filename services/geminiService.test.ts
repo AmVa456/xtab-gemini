@@ -87,7 +87,7 @@ describe('geminiService - API Key Management', () => {
       const { generateImages } = await import('./geminiService');
       
       await expect(generateImages('test prompt')).rejects.toThrow(
-        'Failed to generate images'
+        'API key'
       );
     });
   });
