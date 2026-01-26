@@ -1,262 +1,304 @@
 # GitHub Copilot Instructions for xtab-gemini
 
-## Repository Overview
+## Project Overview
 
-xtab-gemini is an AI-powered design studio built with React, TypeScript, and Vite that integrates with Google's Gemini AI API for image generation, editing, and video creation. The app can operate in three modes:
+xtab-gemini is a React + TypeScript application that provides an AI-powered design studio using Google's Gemini AI. The app enables users to generate images, edit images, create videos, and interact with an AI design assistant. It can operate in three modes:
 
-1. **Standalone** - Independent web application
-2. **Integrated** - Connected to xTab-dashboard via API
-3. **Embedded** - Component embedded within xTab-dashboard
+1. **Standalone Mode** - Works independently without backend
+2. **Integrated Mode** - Connects to xTab-dashboard via API to save posts
+3. **Embedded Mode** - Can be embedded within xTab-dashboard as a component
 
 ## Tech Stack
 
-- **Frontend Framework**: React 19.1.1 with TypeScript
+- **Frontend**: React 19.1.1 with TypeScript 5.8
 - **Build Tool**: Vite 6.2.0
-- **AI Integration**: Google Gemini API (@google/genai)
-- **Deployment**: GitHub Pages (automated via GitHub Actions)
-- **Node Version**: 18.0.0 or higher
+- **AI Integration**: Google Gemini AI (`@google/genai` v1.14.0)
+- **Styling**: CSS modules and inline styles
+- **State Management**: React hooks (no external state management library)
+- **Node Version**: >= 18.0.0
 
 ## Project Structure
 
 ```
-├── components/          # React components
-│   ├── ApiKeySettings.tsx
-│   ├── ChatInput.tsx
-│   ├── DashboardConnection.tsx
-│   ├── Gallery.tsx
-│   ├── ImageEditor.tsx
-│   ├── VideoGenerator.tsx
-│   └── ...
-├── hooks/              # Custom React hooks
-├── services/           # API clients and service layers
-├── lib/                # Utility functions and types
-├── App.tsx             # Main application component
-├── index.tsx           # Application entry point
-└── vite.config.ts      # Vite configuration
+/
+├── .github/              # GitHub configuration and workflows
+│   └── workflows/        # GitHub Actions CI/CD
+├── components/           # React components
+│   ├── ApiKeySettings.tsx       # API key management
+│   ├── ChatInput.tsx            # Chat interface
+│   ├── CodeInput.tsx            # Code editor component
+│   ├── DashboardConnection.tsx  # Dashboard connectivity UI
+│   ├── FeedbackDisplay.tsx      # Feedback messages
+│   ├── Gallery.tsx              # Image gallery
+│   ├── Header.tsx               # App header
+│   ├── ImageEditor.tsx          # Image editing interface
+│   ├── Loader.tsx               # Loading spinner
+│   ├── SaveToPostDialog.tsx     # Save to dashboard dialog
+│   └── VideoGenerator.tsx       # Video generation UI
+├── hooks/                # Custom React hooks
+│   └── useDashboardConnection.tsx  # Dashboard connection logic
+├── lib/                  # Core library code
+│   ├── config.ts         # Configuration management
+│   └── types.ts          # TypeScript type definitions
+├── services/             # Service layer
+│   ├── dashboardApiClient.ts  # API client for xTab-dashboard
+│   └── geminiService.ts       # Gemini AI service wrapper
+├── App.tsx               # Main application component
+├── index.tsx             # Application entry point
+├── lib.tsx               # Library export (for embedded mode)
+└── vite.config.ts        # Vite configuration
+
 ```
 
-## Development Commands
+## Code Conventions
+
+### TypeScript
+
+- **Always use TypeScript** - No JavaScript files in the codebase
+- **Strict typing** - Avoid `any` types; use proper type definitions
+- **Type definitions** are located in `lib/types.ts` for shared types
+- **Interface over type** for object shapes, but be flexible
+- Use explicit return types for exported functions
+- Enable `experimentalDecorators` and `jsx: react-jsx` settings
+
+### React
+
+- **Function components only** - No class components
+- **Hooks** for state and side effects
+- **Component file naming**: PascalCase matching component name (e.g., `ApiKeySettings.tsx`)
+- **Props interface**: Define props as an interface named `ComponentNameProps`
+- **Default exports** for components
+- Use **React 19** features - updated hooks and APIs
+
+### Environment Variables
+
+- **Build-time variables**: Prefix with `VITE_` for client-side access
+- **API keys**: Support multiple sources with priority (highest to lowest):
+  1. User-provided (localStorage) - overrides all other sources
+  2. Build-time environment variables (`GEMINI_API_KEY` or `VITE_GEMINI_API_KEY`)
+  3. No fallback - user must configure
+- **Never commit** `.env.local` or `.env` files with real keys
+- Use `.env.example` as template for required variables
+
+### File Organization
+
+- **Services** (`/services`): External API interactions and complex logic
+- **Components** (`/components`): UI components, each in its own file
+- **Hooks** (`/hooks`): Custom React hooks
+- **Lib** (`/lib`): Core utilities, configuration, and types
+- **One component per file** - no multiple exports of components
+
+### Naming Conventions
+
+- **Files**: PascalCase for components, camelCase for utilities
+- **Variables/Functions**: camelCase
+- **Constants**: UPPER_SNAKE_CASE
+- **Types/Interfaces**: PascalCase
+- **CSS Classes**: kebab-case
+
+## Development Workflow
+
+### Setup
 
 ```bash
 # Install dependencies
 npm install
 
+# Copy environment template
+cp .env.example .env.local
+
+# Edit .env.local with your API key
+# GEMINI_API_KEY=your_key_here
+
 # Start development server
 npm run dev
+```
 
-# Build for production (standalone)
+### Build Commands
+
+```bash
+# Standalone build (default)
 npm run build
 
-# Build as library (for embedding)
+# Library build (for embedding in xTab-dashboard)
 npm run build:lib
 
 # Preview production build
 npm run preview
 ```
 
-## Environment Configuration
+### Build Modes
 
-Required environment variables (create `.env.local`):
+- **Standalone mode** (default): Builds full SPA with base path `/xtab-gemini/`
+- **Library mode** (`--mode library`): Builds ES and UMD modules for embedding
 
-```env
-# Required
-GEMINI_API_KEY=your_gemini_api_key_here
+### Environment Configuration
 
-# Optional - xTab-Dashboard Integration
-VITE_DASHBOARD_ENABLED=false
-VITE_DASHBOARD_API_URL=http://localhost:5000/api
-VITE_DASHBOARD_API_KEY=
-VITE_MODE=standalone
-```
+Key environment variables:
 
-## Coding Standards
+- `GEMINI_API_KEY` - Google Gemini API key (required). Accessed via `loadEnv()` in Vite config and made available as `process.env.GEMINI_API_KEY`. Does not require `VITE_` prefix due to explicit handling in vite.config.ts.
+- `VITE_DASHBOARD_ENABLED` - Enable dashboard integration (true/false)
+- `VITE_DASHBOARD_API_URL` - Dashboard API endpoint
+- `VITE_DASHBOARD_API_KEY` - Dashboard authentication key
+- `VITE_MODE` - App mode: standalone/integrated/embedded
 
-### TypeScript
+Note: `VITE_GEMINI_API_KEY` is also supported in code for backward compatibility but `GEMINI_API_KEY` is the standard.
 
-- Use TypeScript for all new files
-- Enable strict type checking
-- Define interfaces for component props
-- Use type imports: `import type { ComponentProps } from 'react'`
-- Path aliases: Use `@/*` for imports (configured in tsconfig.json)
+## Architecture Patterns
 
-### React Conventions
+### Configuration Management
 
-- Use functional components with hooks
-- Use React 19 features (no legacy patterns)
-- Component files use `.tsx` extension
-- Export components as default exports
-- Use `react-jsx` transform (no need to import React)
-- Prefer composition over inheritance
+- Centralized in `lib/config.ts`
+- Runtime configuration overrides environment variables
+- Settings persisted in localStorage
+- Use `getConfig()` to access configuration
 
-### File Naming
+### API Integration
 
-- Components: PascalCase (e.g., `ImageEditor.tsx`)
-- Utilities: camelCase (e.g., `apiClient.ts`)
-- Types: PascalCase for interfaces and types
+- **Gemini Service** (`services/geminiService.ts`): Wraps Google Gemini API
+  - Handles API key from multiple sources
+  - Provides methods for image generation, video generation, and chat
+  - Manages Operation polling for async tasks
 
-### Code Style
+- **Dashboard API Client** (`services/dashboardApiClient.ts`): Communicates with xTab-dashboard
+  - Singleton pattern: Use `getDashboardApiClient()`
+  - Methods: `healthCheck()`, `createPost()`, `uploadAttachment()`, `savePost()`
+  - All methods return typed responses
 
-- Use 2 spaces for indentation
-- Single quotes for strings
-- Semicolons are optional (follow existing patterns)
-- Use destructuring for props
-- Keep components focused and small
+### State Management
 
-## API Integration Patterns
+- **Local state**: `useState` for component-specific state
+- **Side effects**: `useEffect` for API calls and subscriptions
+- **Custom hooks**: Extract complex logic (e.g., `useDashboardConnection`)
+- **No global state library** - props and context when needed
 
-### Gemini API
+### Error Handling
 
-```typescript
-import { GoogleGenerativeAI } from '@google/genai';
-
-const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-```
-
-### Dashboard API Client
-
-When `VITE_DASHBOARD_ENABLED=true`, use the dashboard API client:
-
-```typescript
-import { getDashboardApiClient } from '@/services/dashboardApi';
-
-const client = getDashboardApiClient();
-await client.healthCheck();
-await client.createPost({ title, content, platforms, status, tags });
-```
-
-## State Management
-
-- Use React hooks (`useState`, `useEffect`, `useCallback`, `useMemo`)
-- Keep state close to where it's used
-- Lift state up when needed for sharing
-- Use localStorage for persisting user preferences
-
-## Component Development
-
-### Creating New Components
-
-1. Create component file in `/components` directory
-2. Define TypeScript interface for props
-3. Implement component with proper typing
-4. Export as default
-5. Import in parent component
-
-Example:
-
-```typescript
-interface MyComponentProps {
-  title: string;
-  onAction: () => void;
-}
-
-export default function MyComponent({ title, onAction }: MyComponentProps) {
-  return (
-    <div>
-      <h2>{title}</h2>
-      <button onClick={onAction}>Action</button>
-    </div>
-  );
-}
-```
-
-## Error Handling
-
-- Use try-catch blocks for async operations
 - Display user-friendly error messages
 - Log errors to console for debugging
-- Handle API errors gracefully
-- Validate user inputs before API calls
+- Graceful degradation when features unavailable
+- Validate API responses before using
 
-## Security Best Practices
+## Testing
 
-- Never commit API keys to version control
-- Use environment variables for sensitive data
-- Validate and sanitize user inputs
-- Use React's built-in XSS protection
-- Implement proper CORS for API integration
-- Keep dependencies updated
+Currently, there is **no test infrastructure** in this project. When adding tests:
 
-## Build Outputs
+- Use a React testing library (e.g., Vitest + React Testing Library)
+- Test user interactions and component rendering
+- Mock external API calls (Gemini, Dashboard)
+- Avoid testing implementation details
 
-### Standalone Build (`npm run build`)
-- Output: `dist/` directory
-- Single-page application
-- Deployed to GitHub Pages
+## Common Patterns
 
-### Library Build (`npm run build:lib`)
-- Output: `dist/xtab-gemini.es.js` (ES module)
-- Output: `dist/xtab-gemini.umd.js` (UMD)
-- For embedding in other applications
+### API Key Management
 
-## Testing Guidance
+```typescript
+// Get API key from multiple sources
+import { getApiKey, saveApiKey, isApiKeyConfigured } from './services/geminiService';
 
-Currently no automated tests are configured. When adding tests:
-- Use a testing framework compatible with Vite (e.g., Vitest)
-- Test components in isolation
-- Mock API calls
-- Test user interactions
-- Test error states
+// Check if configured
+if (!isApiKeyConfigured()) {
+  // Show API key settings
+}
+
+// Save user-provided key
+saveApiKey(userProvidedKey);
+```
+
+### Dashboard Integration
+
+```typescript
+// Check if dashboard is enabled
+import { isDashboardEnabled } from './lib/config';
+
+if (isDashboardEnabled()) {
+  // Show dashboard features
+}
+
+// Use the API client
+import { getDashboardApiClient } from './services/dashboardApiClient';
+
+const client = getDashboardApiClient();
+const response = await client.savePost({
+  title: 'My Post',
+  content: 'Content here',
+  platforms: ['twitter'],
+  status: 'draft',
+  images: [imageDataUrl],
+});
+```
+
+### Image Handling
+
+- Images stored as base64 data URLs
+- Format: `data:image/png;base64,<encoded_data>`
+- Use for both gallery storage and API uploads
+
+## Important Notes
+
+### Security
+
+- **Never expose API keys** in client code or commits
+- **Validate all user inputs** before sending to APIs
+- **Sanitize HTML** if displaying user-generated content
+- **CORS configuration** required for dashboard integration
+
+### Performance
+
+- **Lazy load** large components when possible
+- **Debounce** user inputs for API calls
+- **Cache** API responses when appropriate
+- **Optimize images** before upload (size, format)
+
+### Browser Compatibility
+
+- Modern browsers only (ES2022 features)
+- No IE11 support
+- Service Workers not currently used
+
+### Embedded Mode
+
+- Component exports through `lib.tsx`
+- React and ReactDOM marked as external dependencies
+- PostMessage communication for cross-origin scenarios
+- Detects iframe context automatically
+
+## Common Pitfalls
+
+1. **API Key Priority**: User-provided keys (localStorage) override environment variables
+2. **Base Path**: Standalone builds use `/xtab-gemini/` base path for GitHub Pages
+3. **Environment Variables**: Must prefix with `VITE_` for client-side access (except `GEMINI_API_KEY` which is handled by Vite config)
+4. **Vite Config**: Different behavior in `library` mode vs default mode
+5. **JSX Transform**: Uses automatic JSX transform (`react-jsx`) introduced in React 17, not the legacy `React.createElement` pattern
 
 ## Deployment
 
-Automatic deployment via GitHub Actions (`.github/workflows/deploy.yml`):
-- Triggers on push to `main` branch
-- Runs `npm run build`
-- Deploys to GitHub Pages
-- Available at: https://amva456.github.io/xtab-gemini/
+### GitHub Pages (Automatic)
 
-## Common Tasks
+- Deployed automatically on push to `main` branch
+- Workflow: `.github/workflows/deploy.yml`
+- URL: `https://amva456.github.io/xtab-gemini/`
+- Build command: `npm run build`
 
-### Adding a New Feature
+### Manual Deployment
 
-1. Create components in `/components`
-2. Add services/API integration in `/services`
-3. Update types in `/lib/types.ts` if needed
-4. Import and integrate in `App.tsx`
-5. Test locally with `npm run dev`
-6. Build with `npm run build` to verify
+Push to `main` branch and GitHub Actions handles the rest.
 
-### Integrating with xTab-Dashboard
+## Related Projects
 
-See `INTEGRATION.md` for detailed integration guide:
-- Configure environment variables
-- Use `DashboardApiClient` for API calls
-- Handle connection status
-- Test with `npm run build:lib`
+- **xTab-dashboard**: https://github.com/AmVa456/xTab-dashboard
+- Integration guide: `INTEGRATION.md`
 
-### Adding UI Components
+## Resources
 
-- Keep components reusable
-- Use TypeScript interfaces for props
-- Handle loading and error states
-- Make responsive for different screen sizes
-- Follow existing UI patterns
+- Google Gemini API: https://ai.google.dev/
+- React Documentation: https://react.dev/
+- Vite Documentation: https://vitejs.dev/
+- TypeScript Handbook: https://www.typescriptlang.org/docs/
 
-## Troubleshooting
+## Questions or Issues?
 
-### Build Issues
-- Check Node.js version (>= 18.0.0)
-- Clear `node_modules` and reinstall: `rm -rf node_modules package-lock.json && npm install`
-- Check for TypeScript errors: `tsc --noEmit`
-
-### API Issues
-- Verify `GEMINI_API_KEY` is set correctly
-- Check API quota and limits
-- Review browser console for errors
-- Test API endpoint connectivity
-
-### Dashboard Integration Issues
-- Verify dashboard is running
-- Check CORS configuration
-- Validate API key
-- Test connection with health check endpoint
-
-## Additional Resources
-
-- [Project README](../README.md) - Setup and usage
-- [Integration Guide](../INTEGRATION.md) - xTab-dashboard integration
-- [Google Gemini API Docs](https://ai.google.dev/docs)
-- [React 19 Documentation](https://react.dev/)
-- [Vite Documentation](https://vitejs.dev/)
-- [TypeScript Documentation](https://www.typescriptlang.org/)
+- Check `README.md` for setup instructions
+- Check `INTEGRATION.md` for dashboard integration details
+- Search existing GitHub issues
+- Create a new issue with details about your question or problem
