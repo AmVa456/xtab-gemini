@@ -74,9 +74,10 @@ xtab-gemini is a React + TypeScript application that provides an AI-powered desi
 ### Environment Variables
 
 - **Build-time variables**: Prefix with `VITE_` for client-side access
-- **API keys**: Support multiple sources with priority:
-  1. User-provided (localStorage)
-  2. Build-time environment variables
+- **API keys**: Support multiple sources with priority (highest to lowest):
+  1. User-provided (localStorage) - overrides all other sources
+  2. Build-time environment variables (`GEMINI_API_KEY` or `VITE_GEMINI_API_KEY`)
+  3. No fallback - user must configure
 - **Never commit** `.env.local` or `.env` files with real keys
 - Use `.env.example` as template for required variables
 
@@ -136,7 +137,7 @@ npm run preview
 
 Key environment variables:
 
-- `GEMINI_API_KEY` - Google Gemini API key (required)
+- `GEMINI_API_KEY` or `VITE_GEMINI_API_KEY` - Google Gemini API key (required). Both are supported for backward compatibility; use `GEMINI_API_KEY` as it's processed by Vite config.
 - `VITE_DASHBOARD_ENABLED` - Enable dashboard integration (true/false)
 - `VITE_DASHBOARD_API_URL` - Dashboard API endpoint
 - `VITE_DASHBOARD_API_KEY` - Dashboard authentication key
@@ -265,9 +266,9 @@ const response = await client.savePost({
 
 1. **API Key Priority**: User-provided keys (localStorage) override environment variables
 2. **Base Path**: Standalone builds use `/xtab-gemini/` base path for GitHub Pages
-3. **Environment Variables**: Must prefix with `VITE_` for client-side access
+3. **Environment Variables**: Must prefix with `VITE_` for client-side access (except `GEMINI_API_KEY` which is handled by Vite config)
 4. **Vite Config**: Different behavior in `library` mode vs default mode
-5. **React 19**: Uses new JSX transform (`react-jsx`), not legacy `React.createElement`
+5. **JSX Transform**: Uses automatic JSX transform (`react-jsx`) introduced in React 17, not the legacy `React.createElement` pattern
 
 ## Deployment
 
