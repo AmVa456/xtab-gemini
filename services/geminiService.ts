@@ -83,6 +83,16 @@ export interface GroundingChunk {
 
 export const generateImages = async (prompt: string): Promise<string[]> => {
   try {
+    // Validate API key before attempting generation
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("API key is not configured. Please add your Gemini API key in the settings.");
+    }
+    
+    console.log('[Image Generation] Starting image generation...');
+    console.log('[Image Generation] Prompt:', prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''));
+    console.log('[Image Generation] Model: imagen-4.0-generate-001');
+    
     const ai = getAiInstance();
     const response = await ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
@@ -94,10 +104,42 @@ export const generateImages = async (prompt: string): Promise<string[]> => {
         },
     });
 
-    return response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
+    console.log('[Image Generation] Response received');
+    console.log('[Image Generation] Number of images generated:', response.generatedImages?.length || 0);
+    
+    if (!response.generatedImages || response.generatedImages.length === 0) {
+      throw new Error("No images were generated. The API returned an empty response.");
+    }
+
+    const imageUrls = response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
+    console.log('[Image Generation] Successfully processed images');
+    
+    return imageUrls;
   } catch (error) {
-    console.error("Error generating images:", error);
-    throw new Error("Failed to generate images. Please try again.");
+    // Enhanced error logging
+    console.error("[Image Generation] Error details:", error);
+    
+    if (error instanceof Error) {
+      console.error("[Image Generation] Error message:", error.message);
+      console.error("[Image Generation] Error name:", error.name);
+      
+      // Check for common error scenarios
+      if (error.message.includes('API key')) {
+        throw new Error("API key error: " + error.message);
+      } else if (error.message.includes('quota') || error.message.includes('limit')) {
+        throw new Error("API quota exceeded. Please check your Gemini API quota and billing settings.");
+      } else if (error.message.includes('permission') || error.message.includes('access')) {
+        throw new Error("API permission error: Your API key may not have access to the Imagen API. Please verify your API key has image generation permissions enabled.");
+      } else if (error.message.includes('model') || error.message.includes('imagen')) {
+        throw new Error("Model error: The imagen-4.0-generate-001 model may not be available. Please check the Gemini API documentation for the current model name.");
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        throw new Error("Network error: Unable to reach the Gemini API. Please check your internet connection.");
+      } else {
+        throw new Error("Image generation failed: " + error.message);
+      }
+    }
+    
+    throw new Error("Failed to generate images. An unexpected error occurred. Please check the console for details.");
   }
 };
 

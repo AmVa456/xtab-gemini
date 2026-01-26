@@ -271,6 +271,7 @@ const App: React.FC = () => {
 
     try {
         if (mode === 'generate') {
+            setLoadingStatus('Validating API key and preparing request...');
             const imageUrls = await generateImages(prompt);
             const modelMessage: Message = {
                 id: Date.now().toString() + '-model',
@@ -306,9 +307,19 @@ const App: React.FC = () => {
             }
         }
     } catch (e) {
+        console.error('[App] Error in handleSendMessage:', e);
         const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred.';
+        
+        // Show detailed error message to user
         setError(errorMessage);
+        
+        // Remove the user message if generation failed
         setMessages(prev => prev.filter(msg => msg.id !== userMessage.id)); 
+        
+        // Log additional context for debugging
+        console.error('[App] Mode:', mode);
+        console.error('[App] Prompt:', prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''));
+        console.error('[App] API Key Configured:', isApiKeyConfigured());
     } finally {
         setIsLoading(false);
         setLoadingStatus('');
@@ -354,8 +365,34 @@ const App: React.FC = () => {
             <div ref={messagesEndRef} />
         </div>
         {error && (
-            <div className="mt-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg">
-              <strong>Error:</strong> {error}
+            <div className="mt-4 p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <strong className="font-semibold">Error:</strong>
+                  <p className="mt-1">{error}</p>
+                  {error.includes('API key') && !isApiKeyConfigured() && (
+                    <button
+                      onClick={() => setApiKeySettingsOpen(true)}
+                      className="mt-2 px-3 py-1 bg-red-700 hover:bg-red-600 text-white text-sm font-medium rounded transition-colors duration-200"
+                    >
+                      Configure API Key
+                    </button>
+                  )}
+                  {error.includes('permission') && (
+                    <p className="mt-2 text-sm text-red-200">
+                      💡 Tip: Make sure your API key has the Imagen API enabled. Visit the Google AI Studio to verify your API key permissions.
+                    </p>
+                  )}
+                  {error.includes('model') && (
+                    <p className="mt-2 text-sm text-red-200">
+                      💡 Tip: The model name may have changed. Check the <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-100">Gemini API documentation</a> for the latest model names.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
         )}
         {['generate', 'chat', 'inspiration'].includes(mode) && <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} mode={mode as 'generate' | 'chat' | 'inspiration'} />}
